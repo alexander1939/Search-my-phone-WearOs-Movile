@@ -7,16 +7,18 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.Button
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.Text
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,67 +31,178 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MainWithHistoryScreen()
+            MainWithHistoryAndAlertScreen()
         }
     }
 }
 
 @Composable
-fun MainWithHistoryScreen() {
+fun MainWithHistoryAndAlertScreen() {
     var showHistory by remember { mutableStateOf(false) }
-    if (showHistory) {
-        HistoryScreenExample(onBack = { showHistory = false })
-    } else {
-        MainScreenExample(onShowHistory = { showHistory = true })
+    var showAlert by remember { mutableStateOf(false) }
+    when {
+        showAlert -> AlertScreenExample(onStop = { showAlert = false })
+        showHistory -> HistoryScreenExample(onBack = { showHistory = false })
+        else -> MainScreenExample(
+            onShowHistory = { showHistory = true },
+            onShowAlert = { showAlert = true }
+        )
     }
 }
 
 @Composable
-fun MainScreenExample(onShowHistory: () -> Unit = {}) {
+fun MainScreenExample(onShowHistory: () -> Unit = {}, onShowAlert: () -> Unit = {}) {
     EncuentraMiTelefonoTheme {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFE3F2FD)), // Azul muy claro
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(48.dp))
-            Text(
-                text = "Encuentra tu teléfono",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF1976D2),
-                modifier = Modifier.padding(bottom = 24.dp)
-            )
-            Icon(
-                imageVector = Icons.Default.NotificationsActive,
-                contentDescription = null,
-                tint = Color(0xFF1976D2),
-                modifier = Modifier.size(80.dp)
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                text = "¿No encuentras tu móvil? Usa tu reloj para hacerlo sonar y vibrar.",
-                fontSize = 18.sp,
-                color = Color.DarkGray,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(horizontal = 32.dp)
-            )
-            Spacer(modifier = Modifier.height(48.dp))
-            Button(
-                onClick = onShowHistory,
-                modifier = Modifier
-                    .fillMaxWidth(0.7f)
-                    .height(56.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.History,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color(0xFFe0eafc), Color(0xFFcfdef3))
+                    )
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Ver historial de búsquedas", fontSize = 18.sp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(56.dp))
+                Text(
+                    text = "Encuentra tu teléfono",
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color(0xFF1976D2),
+                    modifier = Modifier.shadow(2.dp)
+                )
+                Spacer(modifier = Modifier.height(32.dp))
+                Box(
+                    modifier = Modifier
+                        .size(110.dp)
+                        .background(Color(0xFF1976D2), shape = CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.NotificationsActive,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(60.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(32.dp))
+                Text(
+                    text = "¿No encuentras tu móvil? Usa tu reloj para hacerlo sonar y vibrar.",
+                    fontSize = 18.sp,
+                    color = Color(0xFF374151),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
+                Spacer(modifier = Modifier.height(40.dp))
+                Button(
+                    onClick = onShowAlert,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp)
+                        .shadow(4.dp, shape = RoundedCornerShape(32.dp)),
+                    shape = RoundedCornerShape(32.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF1976D2))
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.NotificationsActive,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = Color.White
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Hacer prueba de búsqueda", fontSize = 18.sp, color = Color.White)
+                }
+                Spacer(modifier = Modifier.height(18.dp))
+                OutlinedButton(
+                    onClick = onShowHistory,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    shape = RoundedCornerShape(32.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(backgroundColor = Color.Transparent)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.History,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = Color(0xFF1976D2)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Ver historial de búsquedas", fontSize = 18.sp, color = Color(0xFF1976D2))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun AlertScreenExample(onStop: () -> Unit = {}) {
+    EncuentraMiTelefonoTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color(0xFFFF5252), Color(0xFFFFC107))
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(140.dp)
+                        .background(Color.White, shape = CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.NotificationsActive,
+                        contentDescription = "Alarma",
+                        tint = Color(0xFFFF5252),
+                        modifier = Modifier.size(90.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(36.dp))
+                Text(
+                    text = "¡Aquí estoy!",
+                    fontSize = 36.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.shadow(4.dp)
+                )
+                Spacer(modifier = Modifier.height(18.dp))
+                Text(
+                    text = "Tu móvil está sonando y vibrando para que lo encuentres.",
+                    fontSize = 20.sp,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                Spacer(modifier = Modifier.height(48.dp))
+                Button(
+                    onClick = onStop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(60.dp)
+                        .shadow(8.dp, shape = RoundedCornerShape(32.dp)),
+                    shape = RoundedCornerShape(32.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = Color.White)
+                ) {
+                    Text("Detener", fontSize = 22.sp, color = Color(0xFFFF5252), fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
@@ -103,55 +216,76 @@ fun HistoryScreenExample(onBack: () -> Unit = {}) {
             "Búsqueda a las 31/05/2024 18:45:02",
             "Búsqueda a las 30/05/2024 09:10:55"
         )
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color(0xFFF1F8E9)), // Fondo verde muy claro
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color(0xFFF1F8E9), Color(0xFFE0F2F1))
+                    )
+                )
         ) {
-            Spacer(modifier = Modifier.height(24.dp))
-            Text(
-                "Historial de búsquedas",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF388E3C),
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-            LazyColumn(modifier = Modifier.weight(1f)) {
-                items(exampleHistory) { item ->
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        elevation = 4.dp
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(32.dp))
+                Text(
+                    "Historial de búsquedas",
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF388E3C),
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                LazyColumn(modifier = Modifier.weight(1f)) {
+                    items(exampleHistory) { item ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            shape = RoundedCornerShape(20.dp),
+                            elevation = 6.dp,
+                            backgroundColor = Color.White
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.NotificationsActive,
-                                contentDescription = null,
-                                tint = Color(0xFF388E3C),
-                                modifier = Modifier.size(32.dp)
-                            )
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Text(item, fontSize = 16.sp)
+                            Row(
+                                modifier = Modifier.padding(20.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .background(Color(0xFF388E3C), shape = CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.NotificationsActive,
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Text(item, fontSize = 16.sp, color = Color(0xFF374151))
+                            }
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(24.dp))
+                OutlinedButton(
+                    onClick = onBack,
+                    modifier = Modifier
+                        .fillMaxWidth(0.5f)
+                        .height(48.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(backgroundColor = Color.Transparent)
+                ) {
+                    Text("Volver", fontSize = 16.sp, color = Color(0xFF388E3C))
+                }
+                Spacer(modifier = Modifier.height(24.dp))
             }
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(
-                onClick = onBack,
-                modifier = Modifier
-                    .fillMaxWidth(0.5f)
-                    .height(48.dp)
-            ) {
-                Text("Volver", fontSize = 16.sp)
-            }
-            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
@@ -166,4 +300,9 @@ fun PreviewMainScreen() {
 @Composable
 fun PreviewHistoryScreen() {
     HistoryScreenExample()
+}
+@Preview(showSystemUi = true)
+@Composable
+fun PreviewAlertScreen() {
+    AlertScreenExample()
 }
