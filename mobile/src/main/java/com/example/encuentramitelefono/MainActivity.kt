@@ -35,6 +35,11 @@ import com.example.encuentramitelefono.theme.EncuentraMiTelefonoTheme
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.DisposableEffect
+import android.hardware.camera2.CameraManager
+import android.hardware.camera2.CameraAccessException
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -153,7 +158,7 @@ fun MainScreenExample(onShowHistory: () -> Unit = {}, onShowAlert: () -> Unit = 
 @Composable
 fun AlertScreenExample(onStop: () -> Unit = {}) {
     val context = LocalContext.current
-    // --- Vibración y sonido ---
+    // --- Vibración, sonido y flash ---
     LaunchedEffect(Unit) {
         val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -170,10 +175,37 @@ fun AlertScreenExample(onStop: () -> Unit = {}) {
         val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
         ringtone = RingtoneManager.getRingtone(context, uri)
         ringtone?.play()
+        // --- Flash parpadeante ---
+        val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        val cameraId = cameraManager.cameraIdList.firstOrNull { id ->
+            cameraManager.getCameraCharacteristics(id).get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
+        }
+        var keepFlashing = true
+        val flashJob = GlobalScope.launch {
+            if (cameraId != null) {
+                try {
+                    while (keepFlashing && isActive) {
+                        cameraManager.setTorchMode(cameraId, true)
+                        kotlinx.coroutines.delay(200)
+                        cameraManager.setTorchMode(cameraId, false)
+                        kotlinx.coroutines.delay(200)
+                    }
+                } catch (e: CameraAccessException) {
+                    // Ignorar si no hay flash
+                }
+            }
+        }
         onDispose {
             ringtone?.stop()
             val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             vibrator.cancel()
+            keepFlashing = false
+            flashJob.cancel()
+            if (cameraId != null) {
+                try {
+                    cameraManager.setTorchMode(cameraId, false)
+                } catch (_: Exception) {}
+            }
         }
     }
     // --- UI visual ---
@@ -219,7 +251,7 @@ fun AlertScreenExample(onStop: () -> Unit = {}) {
                 )
                 Spacer(modifier = Modifier.height(18.dp))
                 Text(
-                    text = "Tu móvil está sonando y vibrando para que lo encuentres.",
+                    text = "Tu móvil está sonando, vibrando y parpadeando para que lo encuentres.",
                     fontSize = 20.sp,
                     color = Color.White,
                     textAlign = TextAlign.Center,
