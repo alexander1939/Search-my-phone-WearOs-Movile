@@ -1,5 +1,11 @@
 package com.example.encuentramitelefono
 
+import android.content.Context
+import android.media.Ringtone
+import android.media.RingtoneManager
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -26,6 +32,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.encuentramitelefono.theme.EncuentraMiTelefonoTheme
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -143,6 +152,31 @@ fun MainScreenExample(onShowHistory: () -> Unit = {}, onShowAlert: () -> Unit = 
 
 @Composable
 fun AlertScreenExample(onStop: () -> Unit = {}) {
+    val context = LocalContext.current
+    // --- Vibración y sonido ---
+    LaunchedEffect(Unit) {
+        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(
+                VibrationEffect.createWaveform(longArrayOf(0, 500, 500, 500), 0)
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(longArrayOf(0, 500, 500, 500), 0)
+        }
+    }
+    var ringtone: Ringtone? = null
+    DisposableEffect(Unit) {
+        val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+        ringtone = RingtoneManager.getRingtone(context, uri)
+        ringtone?.play()
+        onDispose {
+            ringtone?.stop()
+            val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            vibrator.cancel()
+        }
+    }
+    // --- UI visual ---
     EncuentraMiTelefonoTheme {
         Box(
             modifier = Modifier
