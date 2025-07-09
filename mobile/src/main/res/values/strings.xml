@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Encuentra mi telefono</string>
+    <string name="hello_world">Hola, %1$s!</string>
 </resources>
