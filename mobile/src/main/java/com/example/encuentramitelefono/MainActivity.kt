@@ -41,30 +41,33 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import android.content.Intent
+import kotlinx.coroutines.Job
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        var initialShowAlert = false
         if (intent?.getBooleanExtra("buscar_telefono", false) == true) {
-            initialShowAlert = true
+            AlertState.showAlert = true
+        }
+        if (intent?.getBooleanExtra("detener_busqueda", false) == true) {
+            AlertState.showAlert = false
         }
         setContent {
-            MainWithHistoryAndAlertScreen(initialShowAlert)
+            MainWithHistoryAndAlertScreen()
         }
     }
 }
 
 @Composable
-fun MainWithHistoryAndAlertScreen(initialShowAlert: Boolean = false) {
+fun MainWithHistoryAndAlertScreen() {
     var showHistory by remember { mutableStateOf(false) }
-    var showAlert by remember { mutableStateOf(initialShowAlert) }
+    val showAlert = AlertState.showAlert
     when {
-        showAlert -> AlertScreenExample(onStop = { showAlert = false })
+        showAlert -> AlertScreenExample(onStop = { AlertState.showAlert = false })
         showHistory -> HistoryScreenExample(onBack = { showHistory = false })
         else -> MainScreenExample(
             onShowHistory = { showHistory = true },
-            onShowAlert = { showAlert = true }
+            onShowAlert = { AlertState.showAlert = true }
         )
     }
 }
@@ -163,9 +166,15 @@ fun MainScreenExample(onShowHistory: () -> Unit = {}, onShowAlert: () -> Unit = 
 @Composable
 fun AlertScreenExample(onStop: () -> Unit = {}) {
     val context = LocalContext.current
+    var ringtone: Ringtone? = remember { null }
+    var flashJob: Job? = remember { null }
+    var keepFlashing by remember { mutableStateOf(true) }
+    var cameraId: String? = remember { null }
+    val vibrator = remember { context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator }
+    val cameraManager = remember { context.getSystemService(Context.CAMERA_SERVICE) as CameraManager }
+
     // --- Vibración, sonido y flash ---
     LaunchedEffect(Unit) {
-        val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             vibrator.vibrate(
                 VibrationEffect.createWaveform(longArrayOf(0, 500, 500, 500), 0)
@@ -174,25 +183,20 @@ fun AlertScreenExample(onStop: () -> Unit = {}) {
             @Suppress("DEPRECATION")
             vibrator.vibrate(longArrayOf(0, 500, 500, 500), 0)
         }
-    }
-    var ringtone: Ringtone? = null
-    DisposableEffect(Unit) {
         val uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
         ringtone = RingtoneManager.getRingtone(context, uri)
         ringtone?.play()
-        // --- Flash parpadeante ---
-        val cameraManager = context.getSystemService(Context.CAMERA_SERVICE) as CameraManager
-        val cameraId = cameraManager.cameraIdList.firstOrNull { id ->
+        cameraId = cameraManager.cameraIdList.firstOrNull { id ->
             cameraManager.getCameraCharacteristics(id).get(android.hardware.camera2.CameraCharacteristics.FLASH_INFO_AVAILABLE) == true
         }
-        var keepFlashing = true
-        val flashJob = GlobalScope.launch {
+        keepFlashing = true
+        flashJob = GlobalScope.launch {
             if (cameraId != null) {
                 try {
                     while (keepFlashing && isActive) {
-                        cameraManager.setTorchMode(cameraId, true)
+                        cameraManager.setTorchMode(cameraId!!, true)
                         kotlinx.coroutines.delay(200)
-                        cameraManager.setTorchMode(cameraId, false)
+                        cameraManager.setTorchMode(cameraId!!, false)
                         kotlinx.coroutines.delay(200)
                     }
                 } catch (e: CameraAccessException) {
@@ -200,16 +204,29 @@ fun AlertScreenExample(onStop: () -> Unit = {}) {
                 }
             }
         }
-        onDispose {
+    }
+
+    // --- Detener alerta si AlertState cambia a false (por señal externa o UI) ---
+    LaunchedEffect(AlertState.showAlert) {
+        if (!AlertState.showAlert) {
             ringtone?.stop()
-            val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             vibrator.cancel()
             keepFlashing = false
-            flashJob.cancel()
-            if (cameraId != null) {
-                try {
-                    cameraManager.setTorchMode(cameraId, false)
-                } catch (_: Exception) {}
+            flashJob?.cancel()
+            cameraId?.let {
+                try { cameraManager.setTorchMode(it, false) } catch (_: Exception) {}
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            ringtone?.stop()
+            vibrator.cancel()
+            keepFlashing = false
+            flashJob?.cancel()
+            cameraId?.let {
+                try { cameraManager.setTorchMode(it, false) } catch (_: Exception) {}
             }
         }
     }

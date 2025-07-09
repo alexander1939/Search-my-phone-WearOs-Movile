@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="wear">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-07-09T01:04:31.090197100Z">
+        <DropdownSelection timestamp="2025-07-09T01:29:37.701323300Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\gaele\.android\avd\Wear_OS_pa_chaifon2.0.avd" />

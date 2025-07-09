@@ -9,14 +9,14 @@ class PhoneSearchListenerService : WearableListenerService() {
         if (messageEvent.path == "/buscar-telefono") {
             // Lanzar la actividad principal y activar la alerta
             val intent = Intent(this, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 putExtra("buscar_telefono", true)
             }
             startActivity(intent)
         } else if (messageEvent.path == "/detener-busqueda") {
             // Lanzar la actividad principal y detener la alerta
             val intent = Intent(this, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 putExtra("detener_busqueda", true)
             }
             startActivity(intent)

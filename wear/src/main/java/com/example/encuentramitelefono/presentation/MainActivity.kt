@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -39,6 +41,9 @@ import com.google.android.gms.wearable.Wearable
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,6 +70,7 @@ fun WearApp(greetingName: String) {
                 .background(MaterialTheme.colors.background),
             contentAlignment = Alignment.Center
         ) {
+            var isSearching by remember { mutableStateOf(false) }
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
@@ -76,20 +82,43 @@ fun WearApp(greetingName: String) {
                     color = MaterialTheme.colors.primary
                 )
                 Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = {
-                        coroutineScope.launch {
-                            val nodeClient = Wearable.getNodeClient(context)
-                            val nodes = nodeClient.connectedNodes.await()
-                            val messageClient = Wearable.getMessageClient(context)
-                            nodes.forEach { node: com.google.android.gms.wearable.Node ->
-                                messageClient.sendMessage(node.id, "/buscar-telefono", null).await()
+                if (!isSearching) {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                val nodeClient = Wearable.getNodeClient(context)
+                                val nodes = nodeClient.connectedNodes.await()
+                                val messageClient = Wearable.getMessageClient(context)
+                                nodes.forEach { node: com.google.android.gms.wearable.Node ->
+                                    messageClient.sendMessage(node.id, "/buscar-telefono", null).await()
+                                }
+                                isSearching = true
                             }
-                        }
-                    },
-                    modifier = Modifier.size(width = 120.dp, height = 48.dp),
-                ) {
-                    Text("Buscar")
+                        },
+                        modifier = Modifier.size(width = 120.dp, height = 48.dp),
+                    ) {
+                        Text("Buscar")
+                    }
+                } else {
+                    Button(
+                        onClick = {
+                            coroutineScope.launch {
+                                val nodeClient = Wearable.getNodeClient(context)
+                                val nodes = nodeClient.connectedNodes.await()
+                                val messageClient = Wearable.getMessageClient(context)
+                                nodes.forEach { node: com.google.android.gms.wearable.Node ->
+                                    messageClient.sendMessage(node.id, "/detener-busqueda", null).await()
+                                }
+                                isSearching = false
+                            }
+                        },
+                        modifier = Modifier.size(width = 120.dp, height = 48.dp),
+                        colors = androidx.wear.compose.material.ButtonDefaults.buttonColors(
+                            backgroundColor = Color.Red
+                        )
+                    ) {
+                        Text("Detener")
+                    }
                 }
             }
         }
