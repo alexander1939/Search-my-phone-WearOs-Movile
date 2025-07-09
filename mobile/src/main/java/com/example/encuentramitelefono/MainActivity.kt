@@ -40,20 +40,25 @@ import android.hardware.camera2.CameraAccessException
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import android.content.Intent
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        var initialShowAlert = false
+        if (intent?.getBooleanExtra("buscar_telefono", false) == true) {
+            initialShowAlert = true
+        }
         setContent {
-            MainWithHistoryAndAlertScreen()
+            MainWithHistoryAndAlertScreen(initialShowAlert)
         }
     }
 }
 
 @Composable
-fun MainWithHistoryAndAlertScreen() {
+fun MainWithHistoryAndAlertScreen(initialShowAlert: Boolean = false) {
     var showHistory by remember { mutableStateOf(false) }
-    var showAlert by remember { mutableStateOf(false) }
+    var showAlert by remember { mutableStateOf(initialShowAlert) }
     when {
         showAlert -> AlertScreenExample(onStop = { showAlert = false })
         showHistory -> HistoryScreenExample(onBack = { showHistory = false })
