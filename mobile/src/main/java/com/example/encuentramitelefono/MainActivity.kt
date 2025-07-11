@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -42,6 +43,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import android.content.Intent
 import kotlinx.coroutines.Job
+import com.example.encuentramitelefono.HistoryManager
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -62,6 +64,15 @@ class MainActivity : ComponentActivity() {
 fun MainWithHistoryAndAlertScreen() {
     var showHistory by remember { mutableStateOf(false) }
     val showAlert = AlertState.showAlert
+    val context = LocalContext.current
+    var wasAlertActive by remember { mutableStateOf(false) }
+    // Guardar en historial solo si la alerta se activa y no estaba activa antes
+    LaunchedEffect(showAlert) {
+        if (showAlert && !wasAlertActive) {
+            HistoryManager.addSearch(context)
+        }
+        wasAlertActive = showAlert
+    }
     when {
         showAlert -> AlertScreenExample(onStop = { AlertState.showAlert = false })
         showHistory -> HistoryScreenExample(onBack = { showHistory = false })
@@ -298,12 +309,10 @@ fun AlertScreenExample(onStop: () -> Unit = {}) {
 
 @Composable
 fun HistoryScreenExample(onBack: () -> Unit = {}) {
+    val context = LocalContext.current
+    var history by remember { mutableStateOf(HistoryManager.getHistory(context)) }
+    var toDelete by remember { mutableStateOf<String?>(null) }
     EncuentraMiTelefonoTheme {
-        val exampleHistory = listOf(
-            "Búsqueda a las 01/06/2024 12:30:15",
-            "Búsqueda a las 31/05/2024 18:45:02",
-            "Búsqueda a las 30/05/2024 09:10:55"
-        )
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -329,7 +338,7 @@ fun HistoryScreenExample(onBack: () -> Unit = {}) {
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
                 LazyColumn(modifier = Modifier.weight(1f)) {
-                    items(exampleHistory) { item ->
+                    items(history) { item ->
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -356,7 +365,14 @@ fun HistoryScreenExample(onBack: () -> Unit = {}) {
                                     )
                                 }
                                 Spacer(modifier = Modifier.width(16.dp))
-                                Text(item, fontSize = 16.sp, color = Color(0xFF374151))
+                                Text(item, fontSize = 16.sp, color = Color(0xFF374151), modifier = Modifier.weight(1f))
+                                IconButton(onClick = { toDelete = item }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Eliminar búsqueda",
+                                        tint = Color(0xFFFF5252)
+                                    )
+                                }
                             }
                         }
                     }
@@ -373,6 +389,27 @@ fun HistoryScreenExample(onBack: () -> Unit = {}) {
                     Text("Volver", fontSize = 16.sp, color = Color(0xFF388E3C))
                 }
                 Spacer(modifier = Modifier.height(24.dp))
+            }
+            if (toDelete != null) {
+                AlertDialog(
+                    onDismissRequest = { toDelete = null },
+                    title = { Text("Eliminar búsqueda") },
+                    text = { Text("¿Deseas eliminar esta búsqueda del historial?") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            HistoryManager.removeSearch(context, toDelete!!)
+                            history = HistoryManager.getHistory(context)
+                            toDelete = null
+                        }) {
+                            Text("Eliminar")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { toDelete = null }) {
+                            Text("Cancelar")
+                        }
+                    }
+                )
             }
         }
     }
